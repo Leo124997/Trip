@@ -438,7 +438,165 @@ body {
       <div class="stop-name">東京</div>
     </div>
   </div>
+</div><!-- ===== 天気ウィジェット ここから ===== -->
+<!-- 好きな場所に貼る（ルートマップの後などがおすすめ） -->
+
+<div class="weather-section" id="weatherWidget">
+  <p class="map-strip-title" style="margin-bottom:12px">☁ 軽井沢の天気予報</p>
+  <div id="weatherContent">
+    <div style="text-align:center; color:#9A8C78; font-size:12px; padding:8px">読み込み中...</div>
+  </div>
 </div>
+
+<style>
+.weather-section {
+  background: var(--paper);
+  margin: 0 16px 20px;
+  border-radius: 20px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.07);
+}
+.map-strip-title {
+  font-family: 'Klee One', cursive;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 14px;
+  text-align: center;
+  letter-spacing: .08em;
+}
+.weather-days {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.weather-day {
+  flex: 1;
+  background: white;
+  border-radius: 14px;
+  padding: 12px 8px;
+  text-align: center;
+  border: 1.5px solid #F0EBE3;
+}
+.wd-date {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 6px;
+  letter-spacing: .05em;
+}
+.wd-icon {
+  font-size: 28px;
+  display: block;
+  margin-bottom: 4px;
+  line-height: 1;
+}
+.wd-temp {
+  font-family: 'Klee One', cursive;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 2px;
+}
+.wd-desc {
+  font-size: 10px;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+.wd-rain {
+  font-size: 10px;
+  color: #7AB8D9;
+  font-weight: 700;
+}
+.weather-updated {
+  text-align: center;
+  font-size: 10px;
+  color: #ccc;
+  margin-top: 10px;
+}
+</style>
+
+<script>
+(async function() {
+  const WMO_ICONS = {
+    0:  ['☀️','快晴'],
+    1:  ['🌤','晴れ'],
+    2:  ['⛅','薄曇り'],
+    3:  ['☁️','曇り'],
+    45: ['🌫','霧'],
+    48: ['🌫','霧'],
+    51: ['🌦','小雨'],
+    53: ['🌧','雨'],
+    55: ['🌧','雨'],
+    61: ['🌧','小雨'],
+    63: ['🌧','雨'],
+    65: ['🌧','大雨'],
+    71: ['🌨','小雪'],
+    73: ['❄️','雪'],
+    75: ['❄️','大雪'],
+    80: ['🌦','にわか雨'],
+    81: ['🌧','にわか雨'],
+    82: ['⛈','豪雨'],
+    95: ['⛈','雷雨'],
+    99: ['⛈','雷雨'],
+  };
+
+  function getIcon(code) {
+    const entry = WMO_ICONS[code] || ['🌡','--'];
+    return entry;
+  }
+
+  try {
+    const url = 'https://api.open-meteo.com/v1/forecast'
+      + '?latitude=36.3418&longitude=138.5941'
+      + '&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max'
+      + '&timezone=Asia%2FTokyo'
+      + '&forecast_days=7';
+
+    const res = await fetch(url);
+    const data = await res.json();
+    const d = data.daily;
+
+    // 6/19と6/20のインデックスを探す
+    const targets = ['2026-06-19', '2026-06-20'];
+    const indices = targets.map(t => d.time.indexOf(t));
+
+    let html = '<div class="weather-days">';
+    const labels = ['DAY 1<br>6/19(木)', 'DAY 2<br>6/20(金)'];
+
+    indices.forEach((idx, i) => {
+      if (idx === -1) return;
+      const [icon, desc] = getIcon(d.weathercode[idx]);
+      const hi = Math.round(d.temperature_2m_max[idx]);
+      const lo = Math.round(d.temperature_2m_min[idx]);
+      const rain = d.precipitation_probability_max[idx];
+      html += `
+        <div class="weather-day">
+          <span class="wd-date">${labels[i]}</span>
+          <span class="wd-icon">${icon}</span>
+          <span class="wd-temp">${hi}° / ${lo}°</span>
+          <span class="wd-desc">${desc}</span>
+          <span class="wd-rain">☂ ${rain}%</span>
+        </div>`;
+    });
+
+    html += '</div>';
+    const now = new Date().toLocaleString('ja-JP', {timeZone:'Asia/Tokyo', hour:'2-digit', minute:'2-digit'});
+    html += `<div class="weather-updated">${now} 更新</div>`;
+    document.getElementById('weatherContent').innerHTML = html;
+
+  } catch(e) {
+    document.getElementById('weatherContent').innerHTML =
+      '<div style="text-align:center;color:#ccc;font-size:12px;padding:8px">天気の取得に失敗しました</div>';
+  }
+})();
+</script>
+<!-- ===== 天気ウィジェット ここまで ===== -->
+
 
 <!-- ===== DAY 1 ===== -->
 <section class="section">
